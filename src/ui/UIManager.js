@@ -1,5 +1,5 @@
 import { state } from '../State.js';
-import { updatePaperSize, deleteSelectedShape, addShape, distributeShapes, clearCanvas } from '../physics/LayoutEngine.js';
+import { updatePaperSize, deleteSelectedShape, addShape, distributeShapes, clearCanvas, bringShapeToFront, sendShapeToBack } from '../physics/LayoutEngine.js';
 import { render } from '../physics/Renderer.js';
 
 const paperSelect = document.getElementById('paperSize');
@@ -24,6 +24,16 @@ const selectedShapeWInput = document.getElementById('selectedShapeW');
 const selectedShapeHInput = document.getElementById('selectedShapeH');
 const constrainProportionsInput = document.getElementById('constrainProportions');
 const deleteShapeBtn = document.getElementById('deleteShapeBtn');
+const sendBackBtn = document.getElementById('sendBackBtn');
+const bringFrontBtn = document.getElementById('bringFrontBtn');
+
+// Color DOM
+const defaultStrokeColor = document.getElementById('defaultStrokeColor');
+const defaultFillColor = document.getElementById('defaultFillColor');
+const defaultFillEnabled = document.getElementById('defaultFillEnabled');
+const selectedShapeStroke = document.getElementById('selectedShapeStroke');
+const selectedShapeFillVal = document.getElementById('selectedShapeFillVal');
+const selectedShapeFillEnabled = document.getElementById('selectedShapeFillEnabled');
 
 export function updateSelectedShapeUI() {
     if(state.selectedShapeId) {
@@ -42,6 +52,15 @@ export function updateSelectedShapeUI() {
                 selectedTextSection.classList.add('hidden');
                 selectedShapeWInput.value = shape.widthInches.toFixed(3).replace(/\.?0+$/, '');
                 selectedShapeHInput.value = shape.heightInches.toFixed(3).replace(/\.?0+$/, '');
+            }
+
+            selectedShapeStroke.value = shape.stroke || '#000000';
+            if(shape.fill === 'transparent' || !shape.fill) {
+                selectedShapeFillEnabled.checked = false;
+                selectedShapeFillVal.value = '#ffffff';
+            } else {
+                selectedShapeFillEnabled.checked = true;
+                selectedShapeFillVal.value = shape.fill;
             }
         }
     } else {
@@ -165,6 +184,35 @@ export function setupUIEventListeners() {
     });
 
     deleteShapeBtn.addEventListener('click', deleteSelectedShape);
+    sendBackBtn.addEventListener('click', sendShapeToBack);
+    bringFrontBtn.addEventListener('click', bringShapeToFront);
+
+    // Default Styling Configs
+    defaultStrokeColor.addEventListener('input', (e) => state.currentStrokeStyle = e.target.value);
+    defaultFillColor.addEventListener('input', (e) => state.currentFillStyle = e.target.value);
+    defaultFillEnabled.addEventListener('change', (e) => state.currentFillEnabled = e.target.checked);
+
+    // Selected Styling Sync
+    const updateSelectedFill = () => {
+        if(!state.selectedShapeId) return;
+        const shape = state.shapes.find(s => s.id === state.selectedShapeId);
+        if(shape) {
+            shape.fill = selectedShapeFillEnabled.checked ? selectedShapeFillVal.value : 'transparent';
+            render();
+        }
+    };
+    
+    selectedShapeStroke.addEventListener('input', (e) => {
+        if(!state.selectedShapeId) return;
+        const shape = state.shapes.find(s => s.id === state.selectedShapeId);
+        if(shape) {
+            shape.stroke = e.target.value;
+            render();
+        }
+    });
+
+    selectedShapeFillVal.addEventListener('input', updateSelectedFill);
+    selectedShapeFillEnabled.addEventListener('change', updateSelectedFill);
 
     selectedShapeTextInput.addEventListener('input', (e) => {
         if(!state.selectedShapeId) return;

@@ -91,9 +91,22 @@ function setShapeStyle(shape) {
 function drawCross(shape) {
     const sizeXPx = inchesToPx(shape.widthInches);
     const sizeYPx = inchesToPx(shape.heightInches);
-    drawFocusRing(shape, sizeXPx, sizeYPx);
+    drawFocusRing(shape, sizeXPx, sizeYPx); 
+    
+    const fillArea = () => {
+        if (shape.fill && shape.fill !== 'transparent') {
+            ctx.fillStyle = shape.fill;
+            // Native hit-boxes for cross fill geometry (T-bones)
+            const thirdX = sizeXPx/3;
+            const thirdY = sizeYPx/3;
+            ctx.fillRect(shape.x + thirdX, shape.y, thirdX, sizeYPx);
+            ctx.fillRect(shape.x, shape.y + thirdY, sizeXPx, thirdY);
+        }
+    };
+    fillArea();
+
     ctx.beginPath();
-    setShapeStyle(shape);
+    ctx.strokeStyle = shape.stroke;
     
     ctx.moveTo(shape.x + sizeXPx / 2, shape.y);
     ctx.lineTo(shape.x + sizeXPx / 2, shape.y + sizeYPx);
@@ -114,10 +127,19 @@ function drawCircle(shape) {
 function drawRectangle(shape) {
     const sizeXPx = inchesToPx(shape.widthInches);
     const sizeYPx = inchesToPx(shape.heightInches);
-    drawFocusRing(shape, sizeXPx, sizeYPx);
+    drawFocusRing(shape, sizeXPx, sizeYPx); 
+    
     ctx.beginPath();
-    setShapeStyle(shape);
-    ctx.strokeRect(shape.x, shape.y, sizeXPx, sizeYPx);
+    ctx.rect(shape.x, shape.y, sizeXPx, sizeYPx);
+    
+    if (shape.fill && shape.fill !== 'transparent') {
+        ctx.fillStyle = shape.fill;
+        ctx.fill();
+    }
+    
+    ctx.strokeStyle = shape.stroke;
+    ctx.lineWidth = 1;
+    ctx.stroke();
     ctx.setLineDash([]);
 }
 
@@ -170,7 +192,7 @@ function drawText(shape) {
     drawFocusRing(shape, sizeXPx, sizeYPx); 
     
     // Render native text without physical scale compression clipping
-    ctx.fillStyle = '#000000';
+    ctx.fillStyle = shape.fill && shape.fill !== 'transparent' ? shape.fill : shape.stroke;
     ctx.fillText(textStr, shape.x, shape.y);
 }
 

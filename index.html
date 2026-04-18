@@ -123,13 +123,24 @@
                         <button class="shape-type-btn bg-slate-800 text-slate-300 border border-slate-600 rounded-lg px-2 py-1.5 text-xs font-medium hover:bg-slate-700 transition-all" data-type="line">Line</button>
                         <button class="shape-type-btn col-span-3 bg-slate-800 text-slate-300 border border-slate-600 rounded-lg px-2 py-1.5 text-xs font-medium hover:bg-slate-700 transition-all" data-type="text">Text Node</button>
                     </div>
-                    <div class="mt-3">
-                        <label class="block text-xs font-medium text-slate-300 mb-2">Stroke Control</label>
-                        <select id="shapeStyle" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all appearance-none cursor-pointer">
-                            <option value="solid">Solid Stroke</option>
-                            <option value="dashed">Dashed Stroke</option>
-                        </select>
+                    <div class="mb-4 bg-slate-900/50 rounded-xl p-4 border border-slate-700/50">
+                    <label class="block text-xs font-medium text-slate-300 mb-2">Default Styles</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">Stroke</label>
+                            <input type="color" id="defaultStrokeColor" value="#000000" class="w-full h-8 cursor-pointer bg-slate-800 border border-slate-600 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">Fill</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" id="defaultFillColor" value="#e2e8f0" class="w-full h-8 cursor-pointer bg-slate-800 border border-slate-600 rounded">
+                                <label class="flex items-center cursor-pointer text-[10px] text-slate-400">
+                                    <input type="checkbox" id="defaultFillEnabled" class="mr-1 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500"> En
+                                </label>
+                            </div>
+                        </div>
                     </div>
+                </div>
                 </div>
                     
                     <!-- Shape Size -->
@@ -185,6 +196,24 @@
                         </div>
                     </div>
                     
+                    <div id="selectedColorSection" class="mb-4 bg-slate-800/50 rounded-lg p-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-slate-500 mb-1">Stroke</label>
+                                <input type="color" id="selectedShapeStroke" class="w-full h-8 cursor-pointer bg-slate-800 border border-slate-600 rounded">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 mb-1">Fill</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="selectedShapeFillVal" class="w-full h-8 cursor-pointer bg-slate-800 border border-slate-600 rounded">
+                                    <label class="flex items-center cursor-pointer text-[10px] text-slate-400">
+                                        <input type="checkbox" id="selectedShapeFillEnabled" class="mr-1 rounded border-slate-600 bg-slate-800 text-brand-500 focus:ring-brand-500"> En
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="selectedTextSection" class="mb-4 hidden">
                         <label class="block text-[10px] text-slate-500 mb-1">Text Value</label>
                         <input type="text" id="selectedShapeText" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all mb-3">
@@ -204,6 +233,17 @@
                                 <input type="number" id="selectedShapeFontSize" value="24" step="1" min="8" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all font-mono text-center">
                             </div>
                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <button id="sendBackBtn" class="bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500 transition-all rounded-lg py-1.5 text-xs font-semibold text-indigo-400 active:scale-95 flex justify-center items-center gap-1 group">
+                            <svg class="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17H2a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h20a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2zm-4-4V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/></svg>
+                            Back
+                        </button>
+                        <button id="bringFrontBtn" class="bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 hover:border-indigo-500 transition-all rounded-lg py-1.5 text-xs font-semibold text-indigo-400 active:scale-95 flex justify-center items-center gap-1 group">
+                            <svg class="w-3.5 h-3.5 group-hover:-translate-y-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm4 4v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-8"/></svg>
+                            Front
+                        </button>
                     </div>
 
                     <button id="deleteShapeBtn" class="w-full flex justify-center items-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500 transition-all rounded-lg py-2 text-sm font-semibold active:scale-95 group">

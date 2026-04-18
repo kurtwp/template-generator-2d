@@ -40,6 +40,26 @@ export function deleteSelectedShape() {
     render();
 }
 
+export function bringShapeToFront() {
+    if(!state.selectedShapeId) return;
+    const idx = state.shapes.findIndex(s => s.id === state.selectedShapeId);
+    if (idx !== -1 && idx < state.shapes.length - 1) {
+        const [shape] = state.shapes.splice(idx, 1);
+        state.shapes.push(shape);
+        render();
+    }
+}
+
+export function sendShapeToBack() {
+    if(!state.selectedShapeId) return;
+    const idx = state.shapes.findIndex(s => s.id === state.selectedShapeId);
+    if (idx > 0) {
+        const [shape] = state.shapes.splice(idx, 1);
+        state.shapes.unshift(shape);
+        render();
+    }
+}
+
 export function addShape(type, sizeInches) {
     let w = sizeInches;
     let h = sizeInches;
@@ -56,7 +76,8 @@ export function addShape(type, sizeInches) {
         type,
         widthInches: w,
         heightInches: h,
-        stroke: state.currentShapeStyle,
+        stroke: state.currentStrokeStyle,
+        fill: state.currentFillEnabled ? state.currentFillStyle : 'transparent',
         x,
         y
     };
@@ -163,7 +184,8 @@ export function distributeShapes(numShapes, sizeInches, type) {
             type: type,
             widthInches: w,
             heightInches: h,
-            stroke: state.currentShapeStyle,
+            stroke: state.currentStrokeStyle,
+            fill: state.currentFillEnabled ? state.currentFillStyle : 'transparent',
             x: currentX, 
             y: yPx
         };

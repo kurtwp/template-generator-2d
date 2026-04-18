@@ -1,6 +1,7 @@
 import { state } from '../State.js';
 import { updatePaperSize, deleteSelectedShape, addShape, addImageShape, distributeShapes, clearCanvas, bringShapeToFront, sendShapeToBack, alignSelectedShapes } from '../physics/LayoutEngine.js';
 import { render } from '../physics/Renderer.js';
+import { exportProject, importProject } from '../physics/StorageManager.js';
 
 const paperSelect = document.getElementById('paperSize');
 const orientationSelect = document.getElementById('orientation');
@@ -28,6 +29,11 @@ const bringFrontBtn = document.getElementById('bringFrontBtn');
 const alignmentSection = document.getElementById('alignmentSection');
 const addImageBtn = document.getElementById('addImageBtn');
 const imageInput = document.getElementById('imageInput');
+
+const saveProjectBtn = document.getElementById('saveProjectBtn');
+const loadProjectBtn = document.getElementById('loadProjectBtn');
+const projectFileInput = document.getElementById('projectFileInput');
+const clearProjectBtn = document.getElementById('clearProjectBtn');
 
 // Color DOM
 const defaultStrokeColor = document.getElementById('defaultStrokeColor');
@@ -216,6 +222,22 @@ export function setupUIEventListeners() {
             const type = e.currentTarget.dataset.align;
             alignSelectedShapes(type);
         });
+    });
+
+    // Project Persistence
+    saveProjectBtn.addEventListener('click', () => exportProject());
+    loadProjectBtn.addEventListener('click', () => projectFileInput.click());
+    projectFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            importProject(e.target.files[0]);
+            projectFileInput.value = ''; // Reset
+        }
+    });
+
+    clearProjectBtn.addEventListener('click', () => {
+        if(confirm("Are you sure you want to delete EVERY object from the canvas?")) {
+            clearCanvas();
+        }
     });
 
     // Default Styling Configs

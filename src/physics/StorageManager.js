@@ -28,7 +28,7 @@ export function exportProject() {
 
     const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     const now = new Date();
@@ -46,16 +46,16 @@ export function importProject(file) {
     reader.onload = (e) => {
         try {
             const data = JSON.parse(e.target.result);
-            
+
             // Apply settings
             if (data.settings) {
                 Object.assign(state, data.settings);
             }
-            
+
             // Restore shapes
             state.shapes = data.shapes || [];
             state.selectedShapeIds = [];
-            
+
             // Reconstruct image objects for rendering
             state.shapes.forEach(shape => {
                 if (shape.type === 'image' && shape.src) {
@@ -67,11 +67,11 @@ export function importProject(file) {
                     img.src = shape.src;
                 }
             });
-            
+
             // Re-sync canvas dimensions and UI
             updatePaperSize(); // This calls render()
             updateSelectedShapeUI();
-            
+
         } catch (err) {
             console.error("Failed to load template:", err);
             alert("Invalid template file format.");

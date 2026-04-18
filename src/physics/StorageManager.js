@@ -31,7 +31,10 @@ export function exportProject() {
     
     const a = document.createElement('a');
     a.href = url;
-    a.download = `template_${new Date().toISOString().slice(0,10)}.json`;
+    const now = new Date();
+    const pad = (num) => String(num).padStart(2, '0');
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    a.download = `template_${timestamp}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

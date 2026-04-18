@@ -15,10 +15,15 @@ export function render() {
         else if (shape.type === 'oval') drawOval(shape);
         else if (shape.type === 'line') drawLine(shape);
         else if (shape.type === 'text') drawText(shape);
+        else if (shape.type === 'image') drawImageShape(shape);
     });
 
     if (state.activeTool === 'measure' && state.measureCursor.start && state.measureCursor.end) {
         drawMeasuringTape();
+    }
+
+    if (state.selectionBox) {
+        drawSelectionBox();
     }
 }
 
@@ -211,9 +216,25 @@ function drawText(shape) {
     ctx.fillText(textStr, shape.x, shape.y);
 }
 
+function drawImageShape(shape) {
+    const sizeXPx = inchesToPx(shape.widthInches);
+    const sizeYPx = inchesToPx(shape.heightInches);
+    drawFocusRing(shape, sizeXPx, sizeYPx);
+
+    if (shape.img) {
+        ctx.drawImage(shape.img, shape.x, shape.y, sizeXPx, sizeYPx);
+    } else {
+        // Fallback placeholder
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(shape.x, shape.y, sizeXPx, sizeYPx);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText('Image Missing', shape.x + 5, shape.y + 5);
+    }
+}
+
 function drawFocusRing(shape, sizeXPx, sizeYPx) {
     const height = sizeYPx || sizeXPx;
-    const isSelected = shape.id === state.selectedShapeId;
+    const isSelected = state.selectedShapeIds.includes(shape.id);
     if(isSelected && !window.matchMedia('print').matches) {
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 2;
@@ -287,4 +308,20 @@ function drawMeasuringTape() {
         ctx.fillText(txt, 0, 0);
         ctx.restore();
     }
+}
+
+function drawSelectionBox() {
+    if (!state.selectionBox) return;
+    const bx = Math.min(state.selectionBox.startX, state.selectionBox.currentX);
+    const by = Math.min(state.selectionBox.startY, state.selectionBox.currentY);
+    const bw = Math.abs(state.selectionBox.startX - state.selectionBox.currentX);
+    const bh = Math.abs(state.selectionBox.startY - state.selectionBox.currentY);
+
+    ctx.save();
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+    ctx.strokeRect(bx, by, bw, bh);
+    ctx.fillRect(bx, by, bw, bh);
+    ctx.restore();
 }

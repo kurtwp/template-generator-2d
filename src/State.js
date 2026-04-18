@@ -17,12 +17,12 @@ export const state = {
     currentFillEnabled: false,
     gridStyle: 'solid',
     shapes: [],
-    selectedShapeId: null,
+    selectedShapeIds: [],
+    selectionBox: null,
     currentShapeType: 'cross',
     isDragging: false,
     isResizing: false,
-    dragOffsetX: 0,
-    dragOffsetY: 0,
+    dragOffset: {}, // Map of id -> {offsetX, offsetY}
     activeTool: 'cursor',
     measureCursor: { start: null, end: null }
 };

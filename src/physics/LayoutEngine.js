@@ -27,37 +27,37 @@ export function updatePaperSize() {
 
 export function clearCanvas() {
     state.shapes = [];
-    state.selectedShapeId = null;
+    state.selectedShapeIds = [];
     updateSelectedShapeUI();
     render();
 }
 
 export function deleteSelectedShape() {
-    if(!state.selectedShapeId) return;
-    state.shapes = state.shapes.filter(s => s.id !== state.selectedShapeId);
-    state.selectedShapeId = null;
+    if(state.selectedShapeIds.length === 0) return;
+    state.shapes = state.shapes.filter(s => !state.selectedShapeIds.includes(s.id));
+    state.selectedShapeIds = [];
     updateSelectedShapeUI();
     render();
 }
 
 export function bringShapeToFront() {
-    if(!state.selectedShapeId) return;
-    const idx = state.shapes.findIndex(s => s.id === state.selectedShapeId);
-    if (idx !== -1 && idx < state.shapes.length - 1) {
-        const [shape] = state.shapes.splice(idx, 1);
-        state.shapes.push(shape);
-        render();
-    }
+    if(state.selectedShapeIds.length === 0) return;
+    
+    // Process backwards to maintain relative stack order
+    const toMove = state.shapes.filter(s => state.selectedShapeIds.includes(s.id));
+    state.shapes = state.shapes.filter(s => !state.selectedShapeIds.includes(s.id));
+    state.shapes.push(...toMove);
+    render();
 }
 
 export function sendShapeToBack() {
-    if(!state.selectedShapeId) return;
-    const idx = state.shapes.findIndex(s => s.id === state.selectedShapeId);
-    if (idx > 0) {
-        const [shape] = state.shapes.splice(idx, 1);
-        state.shapes.unshift(shape);
-        render();
-    }
+    if(state.selectedShapeIds.length === 0) return;
+    
+    // Process forwards to maintain relative stack order
+    const toMove = state.shapes.filter(s => state.selectedShapeIds.includes(s.id));
+    state.shapes = state.shapes.filter(s => !state.selectedShapeIds.includes(s.id));
+    state.shapes.unshift(...toMove);
+    render();
 }
 
 export function addShape(type, sizeInches) {
@@ -92,9 +92,61 @@ export function addShape(type, sizeInches) {
     
     state.shapes.push(shapeObj);
     
-    state.selectedShapeId = state.shapes[state.shapes.length - 1].id;
+    state.selectedShapeIds = [shapeObj.id];
     updateSelectedShapeUI();
     render();
+}
+
+export function alignSelectedShapes(type) {
+    if (state.selectedShapeIds.length < 2) return;
+    const selectedShapes = state.shapes.filter(s => state.selectedShapeIds.includes(s.id));
+    
+    if (type === 'left') {
+        const minX = Math.min(...selectedShapes.map(s => s.x));
+        selectedShapes.forEach(s => s.x = minX);
+    } else if (type === 'right') {
+        const maxX = Math.max(...selectedShapes.map(s => s.x + inchesToPx(s.widthInches)));
+        selectedShapes.forEach(s => s.x = maxX - inchesToPx(s.widthInches));
+    } else if (type === 'center') {
+        const centerX = selectedShapes.reduce((sum, s) => sum + (s.x + inchesToPx(s.widthInches)/2), 0) / selectedShapes.length;
+        selectedShapes.forEach(s => s.x = centerX - inchesToPx(s.widthInches)/2);
+    } else if (type === 'top') {
+        const minY = Math.min(...selectedShapes.map(s => s.y));
+        selectedShapes.forEach(s => s.y = minY);
+    }
+    render();
+}
+
+export function addImageShape(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            const aspect = img.width / img.height;
+            const wInches = 2; // Default starting size
+            const hInches = wInches / aspect;
+            
+            const shapeObj = {
+                id: Date.now().toString() + Math.floor(Math.random()*1000),
+                type: 'image',
+                src: e.target.result,
+                img: img, // Cache the actual image object for rendering
+                widthInches: wInches,
+                heightInches: hInches,
+                stroke: 'transparent',
+                fill: 'transparent',
+                x: snap(canvas.width / 2 - inchesToPx(wInches) / 2),
+                y: snap(canvas.height / 2 - inchesToPx(hInches) / 2)
+            };
+            
+            state.shapes.push(shapeObj);
+            state.selectedShapeIds = [shapeObj.id];
+            updateSelectedShapeUI();
+            render();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
 }
 
 export function distributeShapes(numShapes, sizeInches, type) {
@@ -102,12 +154,13 @@ export function distributeShapes(numShapes, sizeInches, type) {
     let h = sizeInches;
     if(type === 'rectangle' || type === 'oval') w *= 2; 
     
-    let parentShape = state.selectedShapeId ? state.shapes.find(s => s.id === state.selectedShapeId) : null;
+    let parentShape = state.selectedShapeIds.length > 0 ? state.shapes.find(s => s.id === state.selectedShapeIds[0]) : null;
     let seedShape = null;
 
-    let txtContent, txtFont, txtSize;
+    let txtContent, txtFont, txtSize, txtStrokeWidth;
 
     if (parentShape) {
+        // Find if this shape is inside another shape
         let enclosingShapes = state.shapes.filter(s => 
             s.id !== parentShape.id && 
             parentShape.x >= s.x && 
@@ -124,10 +177,10 @@ export function distributeShapes(numShapes, sizeInches, type) {
             type = seedShape.type;
             w = seedShape.widthInches;
             h = seedShape.heightInches;
-            state.currentShapeStyle = seedShape.stroke;
+            state.currentStrokeStyle = seedShape.stroke;
+            txtStrokeWidth = seedShape.strokeWidth;
             
             // Text replication properties
-            let txtStrokeWidth = seedShape.strokeWidth;
             if (type === 'text') {
                 txtContent = seedShape.textContent;
                 txtFont = seedShape.fontFamily;
@@ -135,7 +188,7 @@ export function distributeShapes(numShapes, sizeInches, type) {
             }
             
             state.shapes = state.shapes.filter(s => s.id !== seedShape.id);
-            state.selectedShapeId = parentShape.id; 
+            state.selectedShapeIds = [parentShape.id]; 
         } else {
             seedShape = parentShape;
             parentShape = null;
@@ -143,7 +196,8 @@ export function distributeShapes(numShapes, sizeInches, type) {
             type = seedShape.type;
             w = seedShape.widthInches;
             h = seedShape.heightInches;
-            state.currentShapeStyle = seedShape.stroke;
+            state.currentStrokeStyle = seedShape.stroke;
+            txtStrokeWidth = seedShape.strokeWidth;
 
             if (type === 'text') {
                 txtContent = seedShape.textContent;
@@ -152,7 +206,7 @@ export function distributeShapes(numShapes, sizeInches, type) {
             }
             
             state.shapes = state.shapes.filter(s => s.id !== seedShape.id);
-            state.selectedShapeId = null;
+            state.selectedShapeIds = [];
         }
     }
     

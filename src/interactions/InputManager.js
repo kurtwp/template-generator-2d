@@ -20,7 +20,7 @@ function handleMouseDown(e) {
     if (state.activeTool === 'measure') {
         state.isDragging = false; 
         state.isResizing = false;
-        state.selectedShapeId = null;
+        state.selectedShapeIds = [];
         updateSelectedShapeUI();
         state.measureCursor.start = { x: pos.x, y: pos.y };
         state.measureCursor.end = { x: pos.x, y: pos.y };
@@ -28,8 +28,9 @@ function handleMouseDown(e) {
         return;
     }
     
-    if (state.selectedShapeId) {
-        const shape = state.shapes.find(s => s.id === state.selectedShapeId);
+    // Only single selection resizing allowed currently
+    if (state.selectedShapeIds.length === 1) {
+        const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
         if (shape) {
             let sizeXPx = inchesToPx(shape.widthInches);
             let sizeYPx = inchesToPx(shape.heightInches);
@@ -67,24 +68,40 @@ function handleMouseDown(e) {
 
     if (hits.length > 0) {
         hits.sort((a, b) => a.area - b.area);
-        
         const bestHit = hits[0];
         const shape = bestHit.shape;
         
-        state.selectedShapeId = shape.id;
-        state.isDragging = true;
-        state.dragOffsetX = pos.x - shape.x;
-        state.dragOffsetY = pos.y - shape.y;
+        if(e.shiftKey) {
+            const idx = state.selectedShapeIds.indexOf(shape.id);
+            if(idx > -1) state.selectedShapeIds.splice(idx, 1);
+            else state.selectedShapeIds.push(shape.id);
+        } else {
+            if(!state.selectedShapeIds.includes(shape.id)) {
+                state.selectedShapeIds = [shape.id];
+            }
+        }
         
-        state.shapes.splice(bestHit.index, 1);
-        state.shapes.push(shape);
+        state.isDragging = true;
+        state.dragOffset = {};
+        state.selectedShapeIds.forEach(id => {
+            const s = state.shapes.find(v => v.id === id);
+            if(s) state.dragOffset[id] = { x: pos.x - s.x, y: pos.y - s.y };
+        });
+        
+        // Push the most recently clicked shape to front context strictly if Shift isn't held (layer bringing isn't natively expected when lassoing)
+        if(state.selectedShapeIds.length === 1 && bestHit.index !== undefined) {
+             state.shapes.splice(bestHit.index, 1);
+             state.shapes.push(shape);
+        }
         
         updateSelectedShapeUI();
         render();
         return;
     }
     
-    state.selectedShapeId = null;
+    // No hits -> Lasso Box
+    if(!e.shiftKey) state.selectedShapeIds = [];
+    state.selectionBox = { startX: pos.x, startY: pos.y, currentX: pos.x, currentY: pos.y };
     updateSelectedShapeUI();
     render();
 }
@@ -98,11 +115,37 @@ function handleMouseMove(e) {
         return;
     }
 
-    if (!state.selectedShapeId) return;
-    const shape = state.shapes.find(s => s.id === state.selectedShapeId);
-    if (!shape) return;
+    if (state.selectionBox) {
+        state.selectionBox.currentX = pos.x;
+        state.selectionBox.currentY = pos.y;
+        
+        const bx = Math.min(state.selectionBox.startX, state.selectionBox.currentX);
+        const by = Math.min(state.selectionBox.startY, state.selectionBox.currentY);
+        const bw = Math.abs(state.selectionBox.startX - state.selectionBox.currentX);
+        const bh = Math.abs(state.selectionBox.startY - state.selectionBox.currentY);
 
-    if (state.isResizing) {
+        state.selectedShapeIds = [];
+        state.shapes.forEach(shape => {
+            const shapeRight = shape.x + inchesToPx(shape.widthInches);
+            const shapeBottom = shape.y + inchesToPx(shape.heightInches);
+            
+            // Check geographic intersection mathematically
+            if (shape.x < bx + bw && shapeRight > bx && shape.y < by + bh && shapeBottom > by) {
+                state.selectedShapeIds.push(shape.id);
+            }
+        });
+        
+        updateSelectedShapeUI();
+        render();
+        return;
+    }
+
+    if (state.selectedShapeIds.length === 0) return;
+
+    if (state.isResizing && state.selectedShapeIds.length === 1) {
+        const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
+        if(!shape) return;
+        
         let newXPx = pos.x - shape.x;
         let newYPx = pos.y - shape.y;
         
@@ -135,14 +178,20 @@ function handleMouseMove(e) {
     }
 
     if (state.isDragging) {
-        shape.x = snap(pos.x - state.dragOffsetX);
-        shape.y = snap(pos.y - state.dragOffsetY);
-        
-        let sizeXPx = inchesToPx(shape.widthInches);
-        let sizeYPx = inchesToPx(shape.heightInches);
+        state.selectedShapeIds.forEach(id => {
+            const shape = state.shapes.find(s => s.id === id);
+            if(!shape) return;
+            
+            const offset = state.dragOffset[id] || {x: 0, y: 0};
+            shape.x = snap(pos.x - offset.x);
+            shape.y = snap(pos.y - offset.y);
+            
+            let sizeXPx = inchesToPx(shape.widthInches);
+            let sizeYPx = inchesToPx(shape.heightInches);
 
-        shape.x = Math.max(0, Math.min(canvas.width - sizeXPx, shape.x));
-        shape.y = Math.max(0, Math.min(canvas.height - sizeYPx, shape.y));
+            shape.x = Math.max(0, Math.min(canvas.width - sizeXPx, shape.x));
+            shape.y = Math.max(0, Math.min(canvas.height - sizeYPx, shape.y));
+        });
         render();
     }
 }
@@ -150,6 +199,8 @@ function handleMouseMove(e) {
 function handleMouseUp(e) {
     state.isDragging = false;
     state.isResizing = false;
+    state.selectionBox = null;
+    render();
     
     if (state.activeTool === 'measure' && state.measureCursor.start) {
         // Leave the final line visually up until they click again or switch tools

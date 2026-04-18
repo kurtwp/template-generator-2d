@@ -1,5 +1,5 @@
 import { state } from '../State.js';
-import { updatePaperSize, deleteSelectedShape, addShape, distributeShapes, clearCanvas, bringShapeToFront, sendShapeToBack } from '../physics/LayoutEngine.js';
+import { updatePaperSize, deleteSelectedShape, addShape, addImageShape, distributeShapes, clearCanvas, bringShapeToFront, sendShapeToBack, alignSelectedShapes } from '../physics/LayoutEngine.js';
 import { render } from '../physics/Renderer.js';
 
 const paperSelect = document.getElementById('paperSize');
@@ -25,6 +25,9 @@ const constrainProportionsInput = document.getElementById('constrainProportions'
 const deleteShapeBtn = document.getElementById('deleteShapeBtn');
 const sendBackBtn = document.getElementById('sendBackBtn');
 const bringFrontBtn = document.getElementById('bringFrontBtn');
+const alignmentSection = document.getElementById('alignmentSection');
+const addImageBtn = document.getElementById('addImageBtn');
+const imageInput = document.getElementById('imageInput');
 
 // Color DOM
 const defaultStrokeColor = document.getElementById('defaultStrokeColor');
@@ -37,36 +40,56 @@ const selectedShapeFillVal = document.getElementById('selectedShapeFillVal');
 const selectedShapeFillEnabled = document.getElementById('selectedShapeFillEnabled');
 
 export function updateSelectedShapeUI() {
-    if(state.selectedShapeId) {
-        const shape = state.shapes.find(s => s.id === state.selectedShapeId);
-        if(shape) {
-            selectedElementSection.classList.remove('hidden');
-            
-            if (shape.type === 'text') {
-                selectedDimensionSection.classList.add('hidden');
-                selectedTextSection.classList.remove('hidden');
-                selectedShapeTextInput.value = shape.textContent || '';
-                selectedShapeFont.value = shape.fontFamily || 'Arial, sans-serif';
-                selectedShapeFontSize.value = shape.fontSize || 24;
-            } else {
-                selectedDimensionSection.classList.remove('hidden');
-                selectedTextSection.classList.add('hidden');
-                selectedShapeWInput.value = shape.widthInches.toFixed(3).replace(/\.?0+$/, '');
-                selectedShapeHInput.value = shape.heightInches.toFixed(3).replace(/\.?0+$/, '');
-            }
+    if(state.selectedShapeIds.length > 0) {
+        selectedElementSection.classList.remove('hidden');
+        
+        if(state.selectedShapeIds.length === 1) {
+            const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
+            if(shape) {
+                if (shape.type === 'text') {
+                    selectedDimensionSection.classList.add('hidden');
+                    selectedTextSection.classList.remove('hidden');
+                    selectedShapeTextInput.value = shape.textContent || '';
+                    selectedShapeFont.value = shape.fontFamily || 'Arial, sans-serif';
+                    selectedShapeFontSize.value = shape.fontSize || 24;
+                } else {
+                    selectedDimensionSection.classList.remove('hidden');
+                    selectedTextSection.classList.add('hidden');
+                    selectedShapeWInput.value = shape.widthInches.toFixed(3).replace(/\.?0+$/, '');
+                    selectedShapeHInput.value = shape.heightInches.toFixed(3).replace(/\.?0+$/, '');
+                }
 
-            selectedShapeStroke.value = shape.stroke || '#000000';
-            selectedShapeStrokeWidth.value = shape.strokeWidth ?? 1;
-            if(shape.fill === 'transparent' || !shape.fill) {
-                selectedShapeFillEnabled.checked = false;
-                selectedShapeFillVal.value = '#ffffff';
-            } else {
-                selectedShapeFillEnabled.checked = true;
-                selectedShapeFillVal.value = shape.fill;
+                selectedShapeStroke.value = shape.stroke || '#000000';
+                selectedShapeStrokeWidth.value = shape.strokeWidth ?? 1;
+                if(shape.fill === 'transparent' || !shape.fill) {
+                    selectedShapeFillEnabled.checked = false;
+                    selectedShapeFillVal.value = '#ffffff';
+                } else {
+                    selectedShapeFillEnabled.checked = true;
+                    selectedShapeFillVal.value = shape.fill;
+                }
+            }
+        } else {
+            // Multi-select view hide scalar inputs
+            selectedDimensionSection.classList.add('hidden');
+            selectedTextSection.classList.add('hidden');
+            alignmentSection.classList.remove('hidden');
+            
+            // Show arbitrary styling based on the first element
+            const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
+            if(shape) {
+                selectedShapeStroke.value = shape.stroke || '#000000';
+                selectedShapeStrokeWidth.value = shape.strokeWidth ?? 1;
+                if(shape.fill === 'transparent' || !shape.fill) {
+                    selectedShapeFillEnabled.checked = false;
+                } else {
+                    selectedShapeFillEnabled.checked = true;
+                }
             }
         }
     } else {
         selectedElementSection.classList.add('hidden');
+        alignmentSection.classList.add('hidden');
     }
 }
 
@@ -119,7 +142,7 @@ export function setupUIEventListeners() {
             if (state.activeTool !== 'measure') {
                 state.measureCursor = { start: null, end: null };
             } else {
-                state.selectedShapeId = null; 
+                state.selectedShapeIds = []; 
                 updateSelectedShapeUI();
             }
             render();
@@ -164,7 +187,7 @@ export function setupUIEventListeners() {
             }
         }
         
-        if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedShapeId) {
+        if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedShapeIds.length > 0) {
             if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
             deleteSelectedShape();
         }
@@ -180,6 +203,21 @@ export function setupUIEventListeners() {
     sendBackBtn.addEventListener('click', sendShapeToBack);
     bringFrontBtn.addEventListener('click', bringShapeToFront);
 
+    addImageBtn.addEventListener('click', () => imageInput.click());
+    imageInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            addImageShape(e.target.files[0]);
+            imageInput.value = ''; // Reset for next use
+        }
+    });
+
+    document.querySelectorAll('.align-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const type = e.currentTarget.dataset.align;
+            alignSelectedShapes(type);
+        });
+    });
+
     // Default Styling Configs
     defaultStrokeColor.addEventListener('input', (e) => state.currentStrokeStyle = e.target.value);
     defaultStrokeWidth.addEventListener('input', (e) => state.currentStrokeWidth = Math.max(1, parseInt(e.target.value) || 1));
@@ -188,38 +226,44 @@ export function setupUIEventListeners() {
 
     // Selected Styling Sync
     const updateSelectedFill = () => {
-        if(!state.selectedShapeId) return;
-        const shape = state.shapes.find(s => s.id === state.selectedShapeId);
-        if(shape) {
-            shape.fill = selectedShapeFillEnabled.checked ? selectedShapeFillVal.value : 'transparent';
-            render();
-        }
+        if(state.selectedShapeIds.length === 0) return;
+        state.selectedShapeIds.forEach(id => {
+            const shape = state.shapes.find(s => s.id === id);
+            if(shape) {
+                shape.fill = selectedShapeFillEnabled.checked ? selectedShapeFillVal.value : 'transparent';
+            }
+        });
+        render();
     };
     
     selectedShapeStroke.addEventListener('input', (e) => {
-        if(!state.selectedShapeId) return;
-        const shape = state.shapes.find(s => s.id === state.selectedShapeId);
-        if(shape) {
-            shape.stroke = e.target.value;
-            render();
-        }
+        if(state.selectedShapeIds.length === 0) return;
+        state.selectedShapeIds.forEach(id => {
+            const shape = state.shapes.find(s => s.id === id);
+            if(shape) {
+                shape.stroke = e.target.value;
+            }
+        });
+        render();
     });
 
     selectedShapeStrokeWidth.addEventListener('input', (e) => {
-        if(!state.selectedShapeId) return;
-        const shape = state.shapes.find(s => s.id === state.selectedShapeId);
-        if(shape) {
-            shape.strokeWidth = Math.max(0, parseInt(e.target.value) || 0);
-            render();
-        }
+        if(state.selectedShapeIds.length === 0) return;
+        state.selectedShapeIds.forEach(id => {
+            const shape = state.shapes.find(s => s.id === id);
+            if(shape) {
+                shape.strokeWidth = Math.max(0, parseInt(e.target.value) || 0);
+            }
+        });
+        render();
     });
 
     selectedShapeFillVal.addEventListener('input', updateSelectedFill);
     selectedShapeFillEnabled.addEventListener('change', updateSelectedFill);
 
     selectedShapeTextInput.addEventListener('input', (e) => {
-        if(!state.selectedShapeId) return;
-        const shape = state.shapes.find(s => s.id === state.selectedShapeId);
+        if(state.selectedShapeIds.length !== 1) return;
+        const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
         if(shape && shape.type === 'text') {
             shape.textContent = e.target.value;
             render();
@@ -227,33 +271,35 @@ export function setupUIEventListeners() {
     });
 
     selectedShapeFont.addEventListener('change', (e) => {
-        if(!state.selectedShapeId) return;
-        const shape = state.shapes.find(s => s.id === state.selectedShapeId);
-        if(shape && shape.type === 'text') {
-            shape.fontFamily = e.target.value;
+        if(state.selectedShapeIds.length === 0) return;
+        state.selectedShapeIds.forEach(id => {
+            const shape = state.shapes.find(s => s.id === id);
+            if(shape && shape.type === 'text') shape.fontFamily = e.target.value;
+        });
+        render();
+    });
+
+    selectedShapeFontSize.addEventListener('change', (e) => {
+        if(state.selectedShapeIds.length === 0) return;
+        const val = parseInt(e.target.value, 10);
+        if(val > 0) {
+            state.selectedShapeIds.forEach(id => {
+                const shape = state.shapes.find(s => s.id === id);
+                if(shape && shape.type === 'text') {
+                    shape.fontSize = val;
+                    // Keep hit box height perfectly synced up with logical points math (72pt = 1 inch)
+                    shape.heightInches = val / 72;
+                }
+            });
             render();
         }
     });
 
-    selectedShapeFontSize.addEventListener('change', (e) => {
-        if(!state.selectedShapeId) return;
-        const val = parseInt(e.target.value, 10);
-        if(val > 0) {
-            const shape = state.shapes.find(s => s.id === state.selectedShapeId);
-            if(shape && shape.type === 'text') {
-                shape.fontSize = val;
-                // Keep hit box height perfectly synced up with logical points math (72pt = 1 inch)
-                shape.heightInches = val / 72;
-                render();
-            }
-        }
-    });
-
     selectedShapeWInput.addEventListener('change', (e) => {
-        if(!state.selectedShapeId) return;
+        if(state.selectedShapeIds.length !== 1) return;
         const val = parseFloat(e.target.value);
         if(val > 0) {
-            const shape = state.shapes.find(s => s.id === state.selectedShapeId);
+            const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
             if(shape) {
                 if(constrainProportionsInput.checked) {
                     const ratio = shape.heightInches / shape.widthInches;
@@ -267,10 +313,10 @@ export function setupUIEventListeners() {
     });
 
     selectedShapeHInput.addEventListener('change', (e) => {
-        if(!state.selectedShapeId) return;
+        if(state.selectedShapeIds.length !== 1) return;
         const val = parseFloat(e.target.value);
         if(val > 0) {
-            const shape = state.shapes.find(s => s.id === state.selectedShapeId);
+            const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
             if(shape) {
                 if(constrainProportionsInput.checked) {
                     const ratio = shape.widthInches / shape.heightInches;

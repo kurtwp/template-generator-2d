@@ -8,7 +8,6 @@ const snapSelect = document.getElementById('snapIncrement');
 const gridStyleSelect = document.getElementById('gridStyle');
 const toggleGridBtn = document.getElementById('toggleGridBtn');
 const clearCanvasBtn = document.getElementById('clearCanvasBtn');
-const shapeStyleSelect = document.getElementById('shapeStyle');
 const distributeBtn = document.getElementById('distributeBtn');
 const shapeCountInput = document.getElementById('shapeCount');
 const distributeSizeSelect = document.getElementById('distributeSize');
@@ -87,15 +86,6 @@ export function setupUIEventListeners() {
     gridStyleSelect.addEventListener('change', (e) => {
         state.gridStyle = e.target.value;
         render();
-    });
-
-    shapeStyleSelect.addEventListener('change', (e) => {
-        state.currentShapeStyle = e.target.value;
-        if(state.selectedShapeId) {
-            const shape = state.shapes.find(s => s.id === state.selectedShapeId);
-            if(shape) shape.stroke = state.currentShapeStyle;
-            render();
-        }
     });
 
     toggleGridBtn.addEventListener('click', () => {

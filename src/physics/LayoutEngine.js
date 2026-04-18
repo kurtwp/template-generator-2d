@@ -77,6 +77,7 @@ export function addShape(type, sizeInches) {
         widthInches: w,
         heightInches: h,
         stroke: state.currentStrokeStyle,
+        strokeWidth: state.currentStrokeWidth,
         fill: state.currentFillEnabled ? state.currentFillStyle : 'transparent',
         x,
         y
@@ -126,6 +127,7 @@ export function distributeShapes(numShapes, sizeInches, type) {
             state.currentShapeStyle = seedShape.stroke;
             
             // Text replication properties
+            let txtStrokeWidth = seedShape.strokeWidth;
             if (type === 'text') {
                 txtContent = seedShape.textContent;
                 txtFont = seedShape.fontFamily;
@@ -185,6 +187,7 @@ export function distributeShapes(numShapes, sizeInches, type) {
             widthInches: w,
             heightInches: h,
             stroke: state.currentStrokeStyle,
+            strokeWidth: seedShape ? txtStrokeWidth : state.currentStrokeWidth,
             fill: state.currentFillEnabled ? state.currentFillStyle : 'transparent',
             x: currentX, 
             y: yPx

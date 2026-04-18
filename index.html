@@ -127,8 +127,14 @@
                     <label class="block text-xs font-medium text-slate-300 mb-2">Default Styles</label>
                     <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="block text-[10px] text-slate-500 mb-1">Stroke</label>
-                            <input type="color" id="defaultStrokeColor" value="#000000" class="w-full h-8 cursor-pointer bg-slate-800 border border-slate-600 rounded">
+                            <div class="flex justify-between">
+                                <label class="block text-[10px] text-slate-500 mb-1">Stroke</label>
+                                <label class="block text-[10px] text-slate-500 mb-1 mr-1">Weight</label>
+                            </div>
+                            <div class="flex gap-1">
+                                <input type="color" id="defaultStrokeColor" value="#000000" class="w-full h-8 cursor-pointer bg-slate-800 border border-slate-600 rounded">
+                                <input type="number" id="defaultStrokeWidth" value="1" min="1" max="25" class="w-12 text-center bg-slate-800 border border-slate-600 rounded text-xs text-white">
+                            </div>
                         </div>
                         <div>
                             <label class="block text-[10px] text-slate-500 mb-1">Fill</label>
@@ -199,8 +205,14 @@
                     <div id="selectedColorSection" class="mb-4 bg-slate-800/50 rounded-lg p-3">
                         <div class="grid grid-cols-2 gap-2">
                             <div>
-                                <label class="block text-[10px] text-slate-500 mb-1">Stroke</label>
-                                <input type="color" id="selectedShapeStroke" class="w-full h-8 cursor-pointer bg-slate-800 border border-slate-600 rounded">
+                                <div class="flex justify-between">
+                                    <label class="block text-[10px] text-slate-500 mb-1">Stroke</label>
+                                    <label class="block text-[10px] text-slate-500 mb-1 mr-1">Weight</label>
+                                </div>
+                                <div class="flex gap-1">
+                                    <input type="color" id="selectedShapeStroke" class="w-full h-8 cursor-pointer bg-slate-800 border border-slate-600 rounded">
+                                    <input type="number" id="selectedShapeStrokeWidth" value="1" min="0" max="25" class="w-12 text-center bg-slate-800 border border-slate-600 rounded text-xs text-white focus:outline-none">
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-[10px] text-slate-500 mb-1">Fill</label>

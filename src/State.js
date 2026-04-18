@@ -12,6 +12,7 @@ export const state = {
     showGrid: true,
     currentShapeStyle: '#000000', // Legacy bindings
     currentStrokeStyle: '#000000',
+    currentStrokeWidth: 1,
     currentFillStyle: '#e2e8f0',
     currentFillEnabled: false,
     gridStyle: 'solid',

@@ -107,6 +107,7 @@ function drawCross(shape) {
 
     ctx.beginPath();
     ctx.strokeStyle = shape.stroke;
+    ctx.lineWidth = shape.strokeWidth !== undefined ? shape.strokeWidth : 1;
     
     ctx.moveTo(shape.x + sizeXPx / 2, shape.y);
     ctx.lineTo(shape.x + sizeXPx / 2, shape.y + sizeYPx);
@@ -138,7 +139,7 @@ function drawRectangle(shape) {
     }
     
     ctx.strokeStyle = shape.stroke;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = shape.strokeWidth !== undefined ? shape.strokeWidth : 1;
     ctx.stroke();
     ctx.setLineDash([]);
 }
@@ -148,8 +149,15 @@ function drawOval(shape) {
     const sizeYPx = inchesToPx(shape.heightInches);
     drawFocusRing(shape, sizeXPx, sizeYPx);
     ctx.beginPath();
-    setShapeStyle(shape);
     ctx.ellipse(shape.x + sizeXPx / 2, shape.y + sizeYPx / 2, sizeXPx / 2, sizeYPx / 2, 0, 0, Math.PI * 2);
+    
+    if (shape.fill && shape.fill !== 'transparent') {
+        ctx.fillStyle = shape.fill;
+        ctx.fill();
+    }
+    
+    ctx.strokeStyle = shape.stroke;
+    ctx.lineWidth = shape.strokeWidth !== undefined ? shape.strokeWidth : 1;
     ctx.stroke();
     ctx.setLineDash([]);
 }
@@ -159,7 +167,8 @@ function drawLine(shape) {
     const sizeYPx = inchesToPx(shape.heightInches);
     drawFocusRing(shape, sizeXPx, sizeYPx); 
     ctx.beginPath();
-    setShapeStyle(shape);
+    ctx.strokeStyle = shape.stroke;
+    ctx.lineWidth = shape.strokeWidth !== undefined ? shape.strokeWidth : 1;
     
     if(sizeYPx === inchesToPx(state.snapIncrement) && sizeXPx > sizeYPx) {
        ctx.moveTo(shape.x, shape.y + sizeYPx / 2);
@@ -191,8 +200,14 @@ function drawText(shape) {
     
     drawFocusRing(shape, sizeXPx, sizeYPx); 
     
-    // Render native text without physical scale compression clipping
-    ctx.fillStyle = shape.fill && shape.fill !== 'transparent' ? shape.fill : shape.stroke;
+    // Natively render physical color bounding box if requested dynamically
+    if (shape.fill && shape.fill !== 'transparent') {
+        ctx.fillStyle = shape.fill;
+        ctx.fillRect(shape.x, shape.y, sizeXPx, sizeYPx);
+    }
+    
+    // Render text block matching the shape.stroke property!
+    ctx.fillStyle = shape.stroke;
     ctx.fillText(textStr, shape.x, shape.y);
 }
 

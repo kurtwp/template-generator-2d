@@ -28,9 +28,11 @@ const bringFrontBtn = document.getElementById('bringFrontBtn');
 
 // Color DOM
 const defaultStrokeColor = document.getElementById('defaultStrokeColor');
+const defaultStrokeWidth = document.getElementById('defaultStrokeWidth');
 const defaultFillColor = document.getElementById('defaultFillColor');
 const defaultFillEnabled = document.getElementById('defaultFillEnabled');
 const selectedShapeStroke = document.getElementById('selectedShapeStroke');
+const selectedShapeStrokeWidth = document.getElementById('selectedShapeStrokeWidth');
 const selectedShapeFillVal = document.getElementById('selectedShapeFillVal');
 const selectedShapeFillEnabled = document.getElementById('selectedShapeFillEnabled');
 
@@ -54,6 +56,7 @@ export function updateSelectedShapeUI() {
             }
 
             selectedShapeStroke.value = shape.stroke || '#000000';
+            selectedShapeStrokeWidth.value = shape.strokeWidth ?? 1;
             if(shape.fill === 'transparent' || !shape.fill) {
                 selectedShapeFillEnabled.checked = false;
                 selectedShapeFillVal.value = '#ffffff';
@@ -179,6 +182,7 @@ export function setupUIEventListeners() {
 
     // Default Styling Configs
     defaultStrokeColor.addEventListener('input', (e) => state.currentStrokeStyle = e.target.value);
+    defaultStrokeWidth.addEventListener('input', (e) => state.currentStrokeWidth = Math.max(1, parseInt(e.target.value) || 1));
     defaultFillColor.addEventListener('input', (e) => state.currentFillStyle = e.target.value);
     defaultFillEnabled.addEventListener('change', (e) => state.currentFillEnabled = e.target.checked);
 
@@ -197,6 +201,15 @@ export function setupUIEventListeners() {
         const shape = state.shapes.find(s => s.id === state.selectedShapeId);
         if(shape) {
             shape.stroke = e.target.value;
+            render();
+        }
+    });
+
+    selectedShapeStrokeWidth.addEventListener('input', (e) => {
+        if(!state.selectedShapeId) return;
+        const shape = state.shapes.find(s => s.id === state.selectedShapeId);
+        if(shape) {
+            shape.strokeWidth = Math.max(0, parseInt(e.target.value) || 0);
             render();
         }
     });

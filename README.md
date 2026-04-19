@@ -1,10 +1,9 @@
 # 📐 1:1 Scale Print Designer
 
-[![GitHub License](https://img.shields.io/github/license/kurtwp/template-generator-2d?style=flat-square&color=blue)](https://opensource.org/license/mit)
 [![GitHub stars](https://img.shields.io/github/stars/kurtwp/template-generator-2d?style=flat-square&color=gold)](https://github.com/kurtwp/template-generator-2d/stargazers)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/kurtwp/template-generator-2d/pulls)
 
-A web-based design tool for creating **1:1 scale printable templates**. Built with JavaScript and HTML5 Canvas, this application eliminates the guesswork in physical fabrication by ensuring that 1 inch on your screen (at standard DPI) translates to exactly 1 inch on paper.
+A web based design tool for creating **1:1 scale printable templates**. Built with JavaScript and HTML5 Canvas, this application eliminates the guesswork in physical fabrication by ensuring that 1 inch on your screen (at standard DPI) translates to exactly 1 inch on paper.
 
 ![Main Screenshot](image1.png)
 
@@ -12,9 +11,9 @@ A web-based design tool for creating **1:1 scale printable templates**. Built wi
 
 ## ✨ Key Features
 
-* **📏 True 1:1 Scaling**: Locked to physical dimensions (96 DPI logic) ensuring printed templates match real-world measurements perfectly.
+* **📏 True 1:1 Scaling**: Locked to physical dimensions (96 DPI logic), ensuring printed templates match real world measurements perfectly.
 * **🛠️ Geometric Primitives**: Extensive library including Crosses, Squares, Circles, Ovals, and Lines with real-time scaling and **precise rotation support**.
-* **🔲 Advanced Snap System**: High-accuracy snapping engine with custom increments: **1"**, **0.5"**, **0.25"**, **0.125"**, and **0.0625" (1/16")**.
+* **🔲 Advanced Snap System**: High accuracy snapping engine with custom increments: **1"**, **0.5"**, **0.25"**, **0.125"**, and **0.0625" (1/16")**.
 * **📄 Global Paper Formats**: Built-in support for **Letter**, **Legal**, **Tabloid (11"x17")**, **A4**, and **A3**.
 * **📐 Alignment & Distribution**: Replicate shapes evenly across the canvas or align multiple nodes with a single click using the Distribution Engine.
 * **💾 Project Persistence**: Save your designs locally as timestamped JSON files and resume work instantly.
@@ -24,7 +23,7 @@ A web-based design tool for creating **1:1 scale printable templates**. Built wi
 
 ## 🚀 Getting Started
 
-Since this is a lightweight, frontend-only application, you can run it without any build tools or local servers.
+Since this is a lightweight, frontend application, you can run it without any build tools or local servers.
 
 ### Prerequisites
 
@@ -40,7 +39,7 @@ Since this is a lightweight, frontend-only application, you can run it without a
     ```
 
 2. **Open the application**:
-    Simply double-click `index.html` to launch in your default browser.
+    Double click `index.html` to launch in your default browser.
 
 ---
 
@@ -51,7 +50,7 @@ Since this is a lightweight, frontend-only application, you can run it without a
 The application utilizes a modular architecture designed for precision:
 
 * **`State.js`**: Centralized state management using a 96 DPI scaling constant.
-* **`Renderer.js`**: High-performance Canvas rendering engine supporting coordinate transformations and rotation states.
+* **`Renderer.js`**: High performance Canvas rendering engine supporting coordinate transformations and rotation states.
 * **`LayoutEngine.js`**: Orchestrates shape manipulation, alignment logic, and distribution mathematics.
 * **`InputManager.js`**: Sophisticated event handling for multi-selection, dragging, and resizing.
 

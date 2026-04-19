@@ -1,5 +1,6 @@
 # 📐 1:1 Scale Print Designer
 
+[![GitHub License](https://img.shields.io/github/license/kurtwp/template-generator-2d?style=flat-square&color=blue)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/kurtwp/template-generator-2d?style=flat-square&color=gold)](https://github.com/kurtwp/template-generator-2d/stargazers)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/kurtwp/template-generator-2d/pulls)
 

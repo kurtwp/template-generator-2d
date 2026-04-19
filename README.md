@@ -6,7 +6,7 @@
 
 A high-precision, web-based design tool for creating **1:1 scale printable templates**. Built with Vanilla JavaScript and HTML5 Canvas, this application eliminates the guesswork in physical fabrication by ensuring that 1 inch on your screen (at standard DPI) translates to exactly 1 inch on paper.
 
-![Main Screenshot Placeholder](https://via.placeholder.com/1200x600/0f172a/3b82f6?text=1:1+Scale+Print+Designer+Interface)
+![Main Screenshot](image1.png)
 
 ---
 

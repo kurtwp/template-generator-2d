@@ -84,4 +84,4 @@ Contributions make the open-source community an amazing place!
 
 **Kurt** - [@kurtwp](https://github.com/kurtwp)
 
-Project Link: [https://github.com/kurtwp/template-generator-2d](https://github.com/kurtwp/template-generator-2d)
+Project Link: [2D Template Generator](https://pasewaldt.com/template-generator-2d)

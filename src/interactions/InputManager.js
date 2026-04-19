@@ -1,4 +1,4 @@
-import { state, canvas, inchesToPx, pxToInches, snap } from '../State.js';
+import { state, canvas, inchesToPx, pxToInches, snap, toLocal, rotatePoint } from '../State.js';
 import { updateSelectedShapeUI } from '../ui/UIManager.js';
 import { render } from '../physics/Renderer.js';
 
@@ -32,15 +32,18 @@ function handleMouseDown(e) {
     if (state.selectedShapeIds.length === 1) {
         const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
         if (shape) {
-            let sizeXPx = inchesToPx(shape.widthInches);
-            let sizeYPx = inchesToPx(shape.heightInches);
-
+            const w = inchesToPx(shape.widthInches);
+            const h = inchesToPx(shape.heightInches);
             const pad = 4;
             const handleSize = 10;
-            const hx = shape.x + sizeXPx + pad;
-            const hy = shape.y + sizeYPx + pad;
             
-            if (Math.abs(pos.x - hx) <= handleSize*1.5 && Math.abs(pos.y - hy) <= handleSize*1.5) {
+            // Convert cursor to local space to check against local handle position
+            const localPos = toLocal(pos.x, pos.y, shape);
+            const hxLocal = shape.x + w + pad;
+            const hyLocal = shape.y + h + pad;
+            
+            if (Math.abs(localPos.x - hxLocal) <= handleSize * 2 && 
+                Math.abs(localPos.y - hyLocal) <= handleSize * 2) {
                 state.isResizing = true;
                 return;
             }
@@ -50,18 +53,19 @@ function handleMouseDown(e) {
     let hits = [];
     for (let i = state.shapes.length - 1; i >= 0; i--) {
         const shape = state.shapes[i];
-        let sizeXPx = inchesToPx(shape.widthInches);
-        let sizeYPx = inchesToPx(shape.heightInches);
+        const w = inchesToPx(shape.widthInches);
+        const h = inchesToPx(shape.heightInches);
         
+        const localPos = toLocal(pos.x, pos.y, shape);
         const hitPadding = 10;
         
-        if (pos.x >= shape.x - hitPadding && pos.x <= shape.x + sizeXPx + hitPadding &&
-            pos.y >= shape.y - hitPadding && pos.y <= shape.y + sizeYPx + hitPadding) {
+        if (localPos.x >= shape.x - hitPadding && localPos.x <= shape.x + w + hitPadding &&
+            localPos.y >= shape.y - hitPadding && localPos.y <= shape.y + h + hitPadding) {
             
             hits.push({
                 shape: shape,
                 index: i,
-                area: sizeXPx * sizeYPx
+                area: w * h
             });
         }
     }
@@ -146,16 +150,26 @@ function handleMouseMove(e) {
         const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
         if(!shape) return;
         
-        let newXPx = pos.x - shape.x;
-        let newYPx = pos.y - shape.y;
+        const wOld = inchesToPx(shape.widthInches);
+        const hOld = inchesToPx(shape.heightInches);
+        const cxOld = shape.x + wOld/2;
+        const cyOld = shape.y + hOld/2;
+        
+        // Pivot is Top-Left in world space
+        const pivotWorld = rotatePoint(shape.x, shape.y, cxOld, cyOld, shape.rotation || 0);
+        
+        // 1. Convert mouse to local space relative to current center
+        const localPos = toLocal(pos.x, pos.y, shape);
+        
+        // 2. new dimensions in local space (subtract padding since handle is offset)
+        const pad = 4;
+        let newXPx = localPos.x - shape.x - pad;
+        let newYPx = localPos.y - shape.y - pad;
         
         if (constrainProportionsInput.checked && shape.type !== 'text') {
             const ratio = shape.widthInches / shape.heightInches;
-            if (newXPx / newYPx > ratio) {
-                newYPx = newXPx / ratio;
-            } else {
-                newXPx = newYPx * ratio;
-            }
+            if (newXPx / newYPx > ratio) newYPx = newXPx / ratio;
+            else newXPx = newYPx * ratio;
         }
 
         newXPx = snap(newXPx);
@@ -165,12 +179,22 @@ function handleMouseMove(e) {
         if (newXPx < minSize) newXPx = minSize;
         if (newYPx < minSize) newYPx = minSize;
         
+        // 3. Update Dimensions
         shape.widthInches = pxToInches(newXPx);
         shape.heightInches = pxToInches(newYPx);
+        if (shape.type === 'text') shape.fontSize = Math.round(shape.heightInches * 72);
         
-        if (shape.type === 'text') {
-            shape.fontSize = Math.round(shape.heightInches * 72);
-        }
+        // 4. Reposition to keep Pivot fixed
+        // New center calculation: Pivot + rotateVector( (w/2, h/2), angle )
+        const wNew = inchesToPx(shape.widthInches);
+        const hNew = inchesToPx(shape.heightInches);
+        
+        const rotatedOffset = rotatePoint(wNew/2, hNew/2, 0, 0, shape.rotation || 0);
+        const cxNew = pivotWorld.x + rotatedOffset.x;
+        const cyNew = pivotWorld.y + rotatedOffset.y;
+        
+        shape.x = cxNew - wNew/2;
+        shape.y = cyNew - hNew/2;
         
         updateSelectedShapeUI();
         render();

@@ -96,30 +96,32 @@ function setShapeStyle(shape) {
 function drawCross(shape) {
     const sizeXPx = inchesToPx(shape.widthInches);
     const sizeYPx = inchesToPx(shape.heightInches);
+    
+    ctx.save();
+    ctx.translate(shape.x + sizeXPx/2, shape.y + sizeYPx/2);
+    ctx.rotate((shape.rotation || 0) * Math.PI / 180);
+    
     drawFocusRing(shape, sizeXPx, sizeYPx); 
     
-    const fillArea = () => {
-        if (shape.fill && shape.fill !== 'transparent') {
-            ctx.fillStyle = shape.fill;
-            // Native hit-boxes for cross fill geometry (T-bones)
-            const thirdX = sizeXPx/3;
-            const thirdY = sizeYPx/3;
-            ctx.fillRect(shape.x + thirdX, shape.y, thirdX, sizeYPx);
-            ctx.fillRect(shape.x, shape.y + thirdY, sizeXPx, thirdY);
-        }
-    };
-    fillArea();
+    if (shape.fill && shape.fill !== 'transparent') {
+        ctx.fillStyle = shape.fill;
+        const thirdX = sizeXPx/3;
+        const thirdY = sizeYPx/3;
+        ctx.fillRect(-sizeXPx/2 + thirdX, -sizeYPx/2, thirdX, sizeYPx);
+        ctx.fillRect(-sizeXPx/2, -sizeYPx/2 + thirdY, sizeXPx, thirdY);
+    }
 
     ctx.beginPath();
     ctx.strokeStyle = shape.stroke;
     ctx.lineWidth = shape.strokeWidth !== undefined ? shape.strokeWidth : 1;
     
-    ctx.moveTo(shape.x + sizeXPx / 2, shape.y);
-    ctx.lineTo(shape.x + sizeXPx / 2, shape.y + sizeYPx);
-    ctx.moveTo(shape.x, shape.y + sizeYPx / 2);
-    ctx.lineTo(shape.x + sizeXPx, shape.y + sizeYPx / 2);
+    ctx.moveTo(0, -sizeYPx / 2);
+    ctx.lineTo(0, sizeYPx / 2);
+    ctx.moveTo(-sizeXPx / 2, 0);
+    ctx.lineTo(sizeXPx / 2, 0);
     ctx.stroke();
     ctx.setLineDash([]);
+    ctx.restore();
 }
 
 function drawSquare(shape) {
@@ -133,10 +135,15 @@ function drawCircle(shape) {
 function drawRectangle(shape) {
     const sizeXPx = inchesToPx(shape.widthInches);
     const sizeYPx = inchesToPx(shape.heightInches);
+    
+    ctx.save();
+    ctx.translate(shape.x + sizeXPx/2, shape.y + sizeYPx/2);
+    ctx.rotate((shape.rotation || 0) * Math.PI / 180);
+    
     drawFocusRing(shape, sizeXPx, sizeYPx); 
     
     ctx.beginPath();
-    ctx.rect(shape.x, shape.y, sizeXPx, sizeYPx);
+    ctx.rect(-sizeXPx/2, -sizeYPx/2, sizeXPx, sizeYPx);
     
     if (shape.fill && shape.fill !== 'transparent') {
         ctx.fillStyle = shape.fill;
@@ -147,14 +154,20 @@ function drawRectangle(shape) {
     ctx.lineWidth = shape.strokeWidth !== undefined ? shape.strokeWidth : 1;
     ctx.stroke();
     ctx.setLineDash([]);
+    ctx.restore();
 }
 
 function drawOval(shape) {
     const sizeXPx = inchesToPx(shape.widthInches);
     const sizeYPx = inchesToPx(shape.heightInches);
+    
+    ctx.save();
+    ctx.translate(shape.x + sizeXPx/2, shape.y + sizeYPx/2);
+    ctx.rotate((shape.rotation || 0) * Math.PI / 180);
+    
     drawFocusRing(shape, sizeXPx, sizeYPx);
     ctx.beginPath();
-    ctx.ellipse(shape.x + sizeXPx / 2, shape.y + sizeYPx / 2, sizeXPx / 2, sizeYPx / 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, sizeXPx / 2, sizeYPx / 2, 0, 0, Math.PI * 2);
     
     if (shape.fill && shape.fill !== 'transparent') {
         ctx.fillStyle = shape.fill;
@@ -165,71 +178,79 @@ function drawOval(shape) {
     ctx.lineWidth = shape.strokeWidth !== undefined ? shape.strokeWidth : 1;
     ctx.stroke();
     ctx.setLineDash([]);
+    ctx.restore();
 }
 
 function drawLine(shape) {
     const sizeXPx = inchesToPx(shape.widthInches);
     const sizeYPx = inchesToPx(shape.heightInches);
+    
+    ctx.save();
+    ctx.translate(shape.x + sizeXPx/2, shape.y + sizeYPx/2);
+    ctx.rotate((shape.rotation || 0) * Math.PI / 180);
+    
     drawFocusRing(shape, sizeXPx, sizeYPx); 
     ctx.beginPath();
     ctx.strokeStyle = shape.stroke;
     ctx.lineWidth = shape.strokeWidth !== undefined ? shape.strokeWidth : 1;
     
-    if(sizeYPx === inchesToPx(state.snapIncrement) && sizeXPx > sizeYPx) {
-       ctx.moveTo(shape.x, shape.y + sizeYPx / 2);
-       ctx.lineTo(shape.x + sizeXPx, shape.y + sizeYPx / 2);
-    } else {
-       ctx.moveTo(shape.x, shape.y + sizeYPx);
-       ctx.lineTo(shape.x + sizeXPx, shape.y);
-    }
+    // Modern rotation-aware line: draw horizontally centered in its transformed space
+    ctx.moveTo(-sizeXPx / 2, 0);
+    ctx.lineTo(sizeXPx / 2, 0);
+    
     ctx.stroke();
     ctx.setLineDash([]);
+    ctx.restore();
 }
 
 function drawText(shape) {
-    ctx.fillStyle = '#000000';
-    
-    // Scale standard typographic Points to Physical Canvas Pixels
     const pointToPx = (shape.fontSize / 72) * 96; 
     ctx.font = `${pointToPx}px ${shape.fontFamily || 'Arial, sans-serif'}`;
     ctx.textBaseline = 'top';
 
-    // Auto-calculate exact canvas metric width
     const textStr = shape.textContent || 'New Node';
     const metrics = ctx.measureText(textStr);
     const sizeXPx = metrics.width;
-    
-    // Dynamically heal physical boundaries to wrap the text exactly
     shape.widthInches = pxToInches(sizeXPx);
     const sizeYPx = inchesToPx(shape.heightInches);
+
+    ctx.save();
+    ctx.translate(shape.x + sizeXPx/2, shape.y + sizeYPx/2);
+    ctx.rotate((shape.rotation || 0) * Math.PI / 180);
     
     drawFocusRing(shape, sizeXPx, sizeYPx); 
     
-    // Natively render physical color bounding box if requested dynamically
     if (shape.fill && shape.fill !== 'transparent') {
         ctx.fillStyle = shape.fill;
-        ctx.fillRect(shape.x, shape.y, sizeXPx, sizeYPx);
+        ctx.fillRect(-sizeXPx/2, -sizeYPx/2, sizeXPx, sizeYPx);
     }
     
-    // Render text block matching the shape.stroke property!
     ctx.fillStyle = shape.stroke;
-    ctx.fillText(textStr, shape.x, shape.y);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(textStr, 0, 0);
+    ctx.restore();
 }
 
 function drawImageShape(shape) {
     const sizeXPx = inchesToPx(shape.widthInches);
     const sizeYPx = inchesToPx(shape.heightInches);
+
+    ctx.save();
+    ctx.translate(shape.x + sizeXPx/2, shape.y + sizeYPx/2);
+    ctx.rotate((shape.rotation || 0) * Math.PI / 180);
+    
     drawFocusRing(shape, sizeXPx, sizeYPx);
 
     if (shape.img) {
-        ctx.drawImage(shape.img, shape.x, shape.y, sizeXPx, sizeYPx);
+        ctx.drawImage(shape.img, -sizeXPx/2, -sizeYPx/2, sizeXPx, sizeYPx);
     } else {
-        // Fallback placeholder
         ctx.fillStyle = '#f1f5f9';
-        ctx.fillRect(shape.x, shape.y, sizeXPx, sizeYPx);
+        ctx.fillRect(-sizeXPx/2, -sizeYPx/2, sizeXPx, sizeYPx);
         ctx.fillStyle = '#94a3b8';
-        ctx.fillText('Image Missing', shape.x + 5, shape.y + 5);
+        ctx.fillText('Image Missing', -sizeXPx/2 + 5, -sizeYPx/2 + 5);
     }
+    ctx.restore();
 }
 
 function drawFocusRing(shape, sizeXPx, sizeYPx) {
@@ -240,15 +261,16 @@ function drawFocusRing(shape, sizeXPx, sizeYPx) {
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 6]);
         const pad = 4;
-        ctx.strokeRect(shape.x - pad, shape.y - pad, sizeXPx + pad*2, height + pad*2);
+        // Drawing relative to local origin (centered)
+        ctx.strokeRect(-sizeXPx/2 - pad, -height/2 - pad, sizeXPx + pad*2, height + pad*2);
         ctx.setLineDash([]);
         
         const handleSize = 8;
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 2;
-        const hx = shape.x + sizeXPx + pad - handleSize/2;
-        const hy = shape.y + height + pad - handleSize/2;
+        const hx = sizeXPx/2 + pad - handleSize/2;
+        const hy = height/2 + pad - handleSize/2;
         
         ctx.fillRect(hx, hy, handleSize, handleSize);
         ctx.strokeRect(hx, hy, handleSize, handleSize);

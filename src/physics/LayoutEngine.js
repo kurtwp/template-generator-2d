@@ -80,7 +80,8 @@ export function addShape(type, sizeInches) {
         strokeWidth: state.currentStrokeWidth,
         fill: state.currentFillEnabled ? state.currentFillStyle : 'transparent',
         x,
-        y
+        y,
+        rotation: 0
     };
     
     if (type === 'text') {
@@ -136,7 +137,8 @@ export function addImageShape(file) {
                 stroke: 'transparent',
                 fill: 'transparent',
                 x: snap(canvas.width / 2 - inchesToPx(wInches) / 2),
-                y: snap(canvas.height / 2 - inchesToPx(hInches) / 2)
+                y: snap(canvas.height / 2 - inchesToPx(hInches) / 2),
+                rotation: 0
             };
             
             state.shapes.push(shapeObj);
@@ -244,7 +246,8 @@ export function distributeShapes(numShapes, sizeInches, type) {
             strokeWidth: seedShape ? txtStrokeWidth : state.currentStrokeWidth,
             fill: state.currentFillEnabled ? state.currentFillStyle : 'transparent',
             x: currentX, 
-            y: yPx
+            y: yPx,
+            rotation: 0
         };
         
         if (type === 'text') {

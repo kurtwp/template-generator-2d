@@ -22,6 +22,7 @@ const selectedShapeFont = document.getElementById('selectedShapeFont');
 const selectedShapeFontSize = document.getElementById('selectedShapeFontSize');
 const selectedShapeWInput = document.getElementById('selectedShapeW');
 const selectedShapeHInput = document.getElementById('selectedShapeH');
+const selectedShapeRotationInput = document.getElementById('selectedShapeRotation');
 const constrainProportionsInput = document.getElementById('constrainProportions');
 const deleteShapeBtn = document.getElementById('deleteShapeBtn');
 const sendBackBtn = document.getElementById('sendBackBtn');
@@ -63,6 +64,7 @@ export function updateSelectedShapeUI() {
                     selectedTextSection.classList.add('hidden');
                     selectedShapeWInput.value = shape.widthInches.toFixed(3).replace(/\.?0+$/, '');
                     selectedShapeHInput.value = shape.heightInches.toFixed(3).replace(/\.?0+$/, '');
+                    selectedShapeRotationInput.value = shape.rotation || 0;
                 }
 
                 selectedShapeStroke.value = shape.stroke || '#000000';
@@ -349,5 +351,17 @@ export function setupUIEventListeners() {
                 render();
             }
         }
+    });
+
+    selectedShapeRotationInput.addEventListener('input', (e) => {
+        if(state.selectedShapeIds.length === 0) return;
+        const val = parseFloat(e.target.value) || 0;
+        state.selectedShapeIds.forEach(id => {
+            const shape = state.shapes.find(s => s.id === id);
+            if(shape) {
+                shape.rotation = val;
+            }
+        });
+        render();
     });
 }

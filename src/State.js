@@ -2,7 +2,10 @@ export const DPI = 96;
 
 export const PAPER_SIZES = {
     letter: { width: 8.5, height: 11 },
-    legal: { width: 8.5, height: 14 }
+    legal: { width: 8.5, height: 14 },
+    tabloid: { width: 11, height: 17 },
+    a4: { width: 8.27, height: 11.69 },
+    a3: { width: 11.69, height: 16.54 }
 };
 
 export const state = {
@@ -11,6 +14,7 @@ export const state = {
     snapIncrement: 0.25,
     showGrid: true,
     currentShapeStyle: '#000000', // Legacy bindings
+    distributeDirection: 'horizontal',
     currentStrokeStyle: '#000000',
     currentStrokeWidth: 1,
     currentFillStyle: '#e2e8f0',
@@ -31,12 +35,12 @@ export const state = {
 export const canvas = document.getElementById('designCanvas');
 export const ctx = canvas.getContext('2d');
 
-export function inchesToPx(inches) { 
-    return inches * DPI; 
+export function inchesToPx(inches) {
+    return inches * DPI;
 }
 
-export function pxToInches(px) { 
-    return px / DPI; 
+export function pxToInches(px) {
+    return px / DPI;
 }
 
 export function snap(valuePx) {

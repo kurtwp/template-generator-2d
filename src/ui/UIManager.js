@@ -12,6 +12,7 @@ const clearCanvasBtn = document.getElementById('clearCanvasBtn');
 const distributeBtn = document.getElementById('distributeBtn');
 const shapeCountInput = document.getElementById('shapeCount');
 const distributeSizeSelect = document.getElementById('distributeSize');
+const distributeOrientationBtn = document.getElementById('distributeOrientationBtn');
 
 // Selected Element UI
 const selectedElementSection = document.getElementById('selectedElementSection');
@@ -47,12 +48,12 @@ const selectedShapeFillVal = document.getElementById('selectedShapeFillVal');
 const selectedShapeFillEnabled = document.getElementById('selectedShapeFillEnabled');
 
 export function updateSelectedShapeUI() {
-    if(state.selectedShapeIds.length > 0) {
+    if (state.selectedShapeIds.length > 0) {
         selectedElementSection.classList.remove('hidden');
-        
-        if(state.selectedShapeIds.length === 1) {
+
+        if (state.selectedShapeIds.length === 1) {
             const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
-            if(shape) {
+            if (shape) {
                 if (shape.type === 'text') {
                     selectedDimensionSection.classList.add('hidden');
                     selectedTextSection.classList.remove('hidden');
@@ -69,7 +70,7 @@ export function updateSelectedShapeUI() {
 
                 selectedShapeStroke.value = shape.stroke || '#000000';
                 selectedShapeStrokeWidth.value = shape.strokeWidth ?? 1;
-                if(shape.fill === 'transparent' || !shape.fill) {
+                if (shape.fill === 'transparent' || !shape.fill) {
                     selectedShapeFillEnabled.checked = false;
                     selectedShapeFillVal.value = '#ffffff';
                 } else {
@@ -82,13 +83,13 @@ export function updateSelectedShapeUI() {
             selectedDimensionSection.classList.add('hidden');
             selectedTextSection.classList.add('hidden');
             alignmentSection.classList.remove('hidden');
-            
+
             // Show arbitrary styling based on the first element
             const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
-            if(shape) {
+            if (shape) {
                 selectedShapeStroke.value = shape.stroke || '#000000';
                 selectedShapeStrokeWidth.value = shape.strokeWidth ?? 1;
-                if(shape.fill === 'transparent' || !shape.fill) {
+                if (shape.fill === 'transparent' || !shape.fill) {
                     selectedShapeFillEnabled.checked = false;
                 } else {
                     selectedShapeFillEnabled.checked = true;
@@ -114,7 +115,7 @@ export function setupUIEventListeners() {
 
     snapSelect.addEventListener('change', (e) => {
         state.snapIncrement = parseFloat(e.target.value);
-        render(); 
+        render();
     });
 
     gridStyleSelect.addEventListener('change', (e) => {
@@ -124,7 +125,7 @@ export function setupUIEventListeners() {
 
     toggleGridBtn.addEventListener('click', () => {
         state.showGrid = !state.showGrid;
-        if(state.showGrid) {
+        if (state.showGrid) {
             toggleGridBtn.textContent = 'Visible On';
             toggleGridBtn.classList.remove('text-slate-400', 'bg-slate-800');
             toggleGridBtn.classList.add('text-indigo-400', 'bg-indigo-500/10');
@@ -145,12 +146,12 @@ export function setupUIEventListeners() {
             const clicked = e.target.closest('button');
             clicked.classList.remove('bg-slate-800', 'border-slate-600', 'text-slate-300');
             clicked.classList.add('bg-brand-600', 'border-brand-500', 'text-white', 'shadow-[0_0_15px_rgba(59,130,246,0.2)]');
-            
+
             state.activeTool = clicked.dataset.tool;
             if (state.activeTool !== 'measure') {
                 state.measureCursor = { start: null, end: null };
             } else {
-                state.selectedShapeIds = []; 
+                state.selectedShapeIds = [];
                 updateSelectedShapeUI();
             }
             render();
@@ -177,14 +178,28 @@ export function setupUIEventListeners() {
         });
     });
 
+    distributeOrientationBtn.addEventListener('click', () => {
+        state.distributeDirection = state.distributeDirection === 'horizontal' ? 'vertical' : 'horizontal';
+        const horizIcon = document.getElementById('distOrientationHoriz');
+        const vertIcon = document.getElementById('distOrientationVert');
+
+        if (state.distributeDirection === 'horizontal') {
+            horizIcon.classList.remove('hidden');
+            vertIcon.classList.add('hidden');
+        } else {
+            horizIcon.classList.add('hidden');
+            vertIcon.classList.remove('hidden');
+        }
+    });
+
     distributeBtn.addEventListener('click', () => {
         const count = parseInt(shapeCountInput.value, 10);
         const sizeInches = parseFloat(distributeSizeSelect.value);
         if (count > 0) {
-            distributeShapes(count, sizeInches, state.currentShapeType);
+            distributeShapes(count, sizeInches, state.currentShapeType, state.distributeDirection);
         }
     });
-    
+
     // Global Keyboard Hooks
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -194,7 +209,7 @@ export function setupUIEventListeners() {
                 if (cursorBtn) cursorBtn.click();
             }
         }
-        
+
         if ((e.key === 'Delete' || e.key === 'Backspace') && state.selectedShapeIds.length > 0) {
             if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
             deleteSelectedShape();
@@ -202,7 +217,7 @@ export function setupUIEventListeners() {
     });
 
     clearCanvasBtn.addEventListener('click', () => {
-        if(confirm("Are you sure you want to clear the entire canvas?")) {
+        if (confirm("Are you sure you want to clear the entire canvas?")) {
             clearCanvas();
         }
     });
@@ -237,7 +252,7 @@ export function setupUIEventListeners() {
     });
 
     clearProjectBtn.addEventListener('click', () => {
-        if(confirm("Are you sure you want to delete EVERY object from the canvas?")) {
+        if (confirm("Are you sure you want to delete EVERY object from the canvas?")) {
             clearCanvas();
         }
     });
@@ -250,21 +265,21 @@ export function setupUIEventListeners() {
 
     // Selected Styling Sync
     const updateSelectedFill = () => {
-        if(state.selectedShapeIds.length === 0) return;
+        if (state.selectedShapeIds.length === 0) return;
         state.selectedShapeIds.forEach(id => {
             const shape = state.shapes.find(s => s.id === id);
-            if(shape) {
+            if (shape) {
                 shape.fill = selectedShapeFillEnabled.checked ? selectedShapeFillVal.value : 'transparent';
             }
         });
         render();
     };
-    
+
     selectedShapeStroke.addEventListener('input', (e) => {
-        if(state.selectedShapeIds.length === 0) return;
+        if (state.selectedShapeIds.length === 0) return;
         state.selectedShapeIds.forEach(id => {
             const shape = state.shapes.find(s => s.id === id);
-            if(shape) {
+            if (shape) {
                 shape.stroke = e.target.value;
             }
         });
@@ -272,10 +287,10 @@ export function setupUIEventListeners() {
     });
 
     selectedShapeStrokeWidth.addEventListener('input', (e) => {
-        if(state.selectedShapeIds.length === 0) return;
+        if (state.selectedShapeIds.length === 0) return;
         state.selectedShapeIds.forEach(id => {
             const shape = state.shapes.find(s => s.id === id);
-            if(shape) {
+            if (shape) {
                 shape.strokeWidth = Math.max(0, parseInt(e.target.value) || 0);
             }
         });
@@ -286,30 +301,30 @@ export function setupUIEventListeners() {
     selectedShapeFillEnabled.addEventListener('change', updateSelectedFill);
 
     selectedShapeTextInput.addEventListener('input', (e) => {
-        if(state.selectedShapeIds.length !== 1) return;
+        if (state.selectedShapeIds.length !== 1) return;
         const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
-        if(shape && shape.type === 'text') {
+        if (shape && shape.type === 'text') {
             shape.textContent = e.target.value;
             render();
         }
     });
 
     selectedShapeFont.addEventListener('change', (e) => {
-        if(state.selectedShapeIds.length === 0) return;
+        if (state.selectedShapeIds.length === 0) return;
         state.selectedShapeIds.forEach(id => {
             const shape = state.shapes.find(s => s.id === id);
-            if(shape && shape.type === 'text') shape.fontFamily = e.target.value;
+            if (shape && shape.type === 'text') shape.fontFamily = e.target.value;
         });
         render();
     });
 
     selectedShapeFontSize.addEventListener('change', (e) => {
-        if(state.selectedShapeIds.length === 0) return;
+        if (state.selectedShapeIds.length === 0) return;
         const val = parseInt(e.target.value, 10);
-        if(val > 0) {
+        if (val > 0) {
             state.selectedShapeIds.forEach(id => {
                 const shape = state.shapes.find(s => s.id === id);
-                if(shape && shape.type === 'text') {
+                if (shape && shape.type === 'text') {
                     shape.fontSize = val;
                     // Keep hit box height perfectly synced up with logical points math (72pt = 1 inch)
                     shape.heightInches = val / 72;
@@ -320,12 +335,12 @@ export function setupUIEventListeners() {
     });
 
     selectedShapeWInput.addEventListener('change', (e) => {
-        if(state.selectedShapeIds.length !== 1) return;
+        if (state.selectedShapeIds.length !== 1) return;
         const val = parseFloat(e.target.value);
-        if(val > 0) {
+        if (val > 0) {
             const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
-            if(shape) {
-                if(constrainProportionsInput.checked) {
+            if (shape) {
+                if (constrainProportionsInput.checked) {
                     const ratio = shape.heightInches / shape.widthInches;
                     shape.heightInches = val * ratio;
                     selectedShapeHInput.value = shape.heightInches.toFixed(3).replace(/\.?0+$/, '');
@@ -337,12 +352,12 @@ export function setupUIEventListeners() {
     });
 
     selectedShapeHInput.addEventListener('change', (e) => {
-        if(state.selectedShapeIds.length !== 1) return;
+        if (state.selectedShapeIds.length !== 1) return;
         const val = parseFloat(e.target.value);
-        if(val > 0) {
+        if (val > 0) {
             const shape = state.shapes.find(s => s.id === state.selectedShapeIds[0]);
-            if(shape) {
-                if(constrainProportionsInput.checked) {
+            if (shape) {
+                if (constrainProportionsInput.checked) {
                     const ratio = shape.widthInches / shape.heightInches;
                     shape.widthInches = val * ratio;
                     selectedShapeWInput.value = shape.widthInches.toFixed(3).replace(/\.?0+$/, '');
@@ -354,11 +369,11 @@ export function setupUIEventListeners() {
     });
 
     selectedShapeRotationInput.addEventListener('input', (e) => {
-        if(state.selectedShapeIds.length === 0) return;
+        if (state.selectedShapeIds.length === 0) return;
         const val = parseFloat(e.target.value) || 0;
         state.selectedShapeIds.forEach(id => {
             const shape = state.shapes.find(s => s.id === id);
-            if(shape) {
+            if (shape) {
                 shape.rotation = val;
             }
         });

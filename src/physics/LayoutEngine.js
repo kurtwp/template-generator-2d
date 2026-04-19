@@ -60,44 +60,6 @@ export function sendShapeToBack() {
     render();
 }
 
-export function addShape(type, sizeInches) {
-    let w = sizeInches;
-    let h = sizeInches;
-    if (type === 'rectangle' || type === 'oval') w *= 2;
-
-    const sizeXPx = inchesToPx(w);
-    const sizeYPx = inchesToPx(h);
-
-    const x = snap(canvas.width / 2 - sizeXPx / 2);
-    const y = snap(canvas.height / 2 - sizeYPx / 2);
-
-    const shapeObj = {
-        id: Date.now().toString() + Math.floor(Math.random() * 1000),
-        type,
-        widthInches: w,
-        heightInches: h,
-        stroke: state.currentStrokeStyle,
-        strokeWidth: state.currentStrokeWidth,
-        fill: state.currentFillEnabled ? state.currentFillStyle : 'transparent',
-        x,
-        y,
-        rotation: 0
-    };
-
-    if (type === 'text') {
-        shapeObj.textContent = 'New Node';
-        shapeObj.fontFamily = 'Arial, sans-serif';
-        shapeObj.fontSize = 24;
-        shapeObj.heightInches = 24 / 72;
-    }
-
-    state.shapes.push(shapeObj);
-
-    state.selectedShapeIds = [shapeObj.id];
-    updateSelectedShapeUI();
-    render();
-}
-
 export function alignSelectedShapes(type) {
     if (state.selectedShapeIds.length < 2) return;
     const selectedShapes = state.shapes.filter(s => state.selectedShapeIds.includes(s.id));
@@ -115,6 +77,37 @@ export function alignSelectedShapes(type) {
         const minY = Math.min(...selectedShapes.map(s => s.y));
         selectedShapes.forEach(s => s.y = minY);
     }
+    updateSelectedShapeUI();
+    render();
+}
+
+export function addShape(type, sizeInches) {
+    let w = sizeInches;
+    let h = sizeInches;
+    if (type === 'rectangle' || type === 'oval') w *= 2;
+    if (type === 'text') h = 24 / 72; // 24pt default height match
+
+    const shapeObj = {
+        id: Date.now().toString() + Math.floor(Math.random() * 1000),
+        type: type,
+        widthInches: w,
+        heightInches: h,
+        stroke: state.currentStrokeStyle,
+        strokeWidth: state.currentStrokeWidth,
+        fill: state.currentFillEnabled ? state.currentFillStyle : 'transparent',
+        x: snap(canvas.width / 2 - inchesToPx(w) / 2),
+        y: snap(canvas.height / 2 - inchesToPx(h) / 2),
+        rotation: 0
+    };
+
+    if (type === 'text') {
+        shapeObj.textContent = 'New Node';
+        shapeObj.fontFamily = 'Arial, sans-serif';
+        shapeObj.fontSize = 24;
+    }
+
+    state.shapes.push(shapeObj);
+    state.selectedShapeIds = [shapeObj.id];
     updateSelectedShapeUI();
     render();
 }
@@ -152,7 +145,7 @@ export function addImageShape(file) {
     reader.readAsDataURL(file);
 }
 
-export function distributeShapes(numShapes, sizeInches, type) {
+export function distributeShapes(numShapes, sizeInches, type, direction = 'horizontal') {
     let w = sizeInches;
     let h = sizeInches;
     if (type === 'rectangle' || type === 'oval') w *= 2;
@@ -234,10 +227,13 @@ export function distributeShapes(numShapes, sizeInches, type) {
         parentHeight = inchesToPx(hInches);
     }
 
-    const gapPx = (parentWidth - (sizeXPx * numShapes)) / (numShapes + 1);
+    const isHorizontal = direction === 'horizontal';
+    const totalContentSize = isHorizontal ? (sizeXPx * numShapes) : (sizeYPx * numShapes);
+    const parentDimension = isHorizontal ? parentWidth : parentHeight;
+    const gapPx = (parentDimension - totalContentSize) / (numShapes + 1);
 
-    let currentX = parentX + gapPx;
-    const yPx = parentY + (parentHeight / 2) - (sizeYPx / 2);
+    let currentX = isHorizontal ? (parentX + gapPx) : (parentX + (parentWidth / 2) - (sizeXPx / 2));
+    let currentY = isHorizontal ? (parentY + (parentHeight / 2) - (sizeYPx / 2)) : (parentY + gapPx);
 
     for (let i = 0; i < numShapes; i++) {
         const shapeObj = {
@@ -249,7 +245,7 @@ export function distributeShapes(numShapes, sizeInches, type) {
             strokeWidth: seedShape ? txtStrokeWidth : state.currentStrokeWidth,
             fill: state.currentFillEnabled ? state.currentFillStyle : 'transparent',
             x: currentX,
-            y: yPx,
+            y: currentY,
             rotation: rotation
         };
 
@@ -261,8 +257,13 @@ export function distributeShapes(numShapes, sizeInches, type) {
         }
 
         state.shapes.push(shapeObj);
-        currentX += sizeXPx + gapPx;
+        if (isHorizontal) {
+            currentX += sizeXPx + gapPx;
+        } else {
+            currentY += sizeYPx + gapPx;
+        }
     }
 
+    updateSelectedShapeUI();
     render();
 }

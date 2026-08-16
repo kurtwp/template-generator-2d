@@ -1,0 +1,88 @@
+import { state } from '../State.js';
+import { updatePaperSize } from './LayoutEngine.js';
+import { render } from './Renderer.js';
+import { updateSelectedShapeUI } from '../ui/UIManager.js';
+import { saveState } from '../History.js';
+
+export function exportProject() {
+    // Create a deep copy of the state but omit transient UI properties
+    const projectData = {
+        version: '1.0',
+        timestamp: Date.now(),
+        settings: {
+            paper: state.paper,
+            orientation: state.orientation,
+            snapIncrement: state.snapIncrement,
+            gridStyle: state.gridStyle,
+            showGrid: state.showGrid,
+            currentStrokeStyle: state.currentStrokeStyle,
+            currentStrokeWidth: state.currentStrokeWidth,
+            currentFillStyle: state.currentFillStyle,
+            currentFillEnabled: state.currentFillEnabled
+        },
+        shapes: state.shapes.map(s => {
+            // Clone the shape object but remove the 'img' DOM reference
+            const { img, ...serializableShape } = s;
+            return serializableShape;
+        })
+    };
+
+    const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    const now = new Date();
+    const pad = (num) => String(num).padStart(2, '0');
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    a.download = `template_${timestamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export function importProject(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+
+            // Apply settings
+            if (data.settings) {
+                Object.assign(state, data.settings);
+            }
+
+            // Restore shapes
+            state.shapes = data.shapes || [];
+            state.selectedShapeIds = [];
+
+            // Reconstruct image objects for rendering
+            const imagePromises = state.shapes
+                .filter(shape => shape.type === 'image' && shape.src)
+                .map(shape => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            shape.img = img;
+                            resolve();
+                        };
+                        img.onerror = resolve; // Continue even if one fails
+                        img.src = shape.src;
+                    });
+                });
+
+            Promise.all(imagePromises).then(() => {
+                // Re-sync canvas dimensions and UI
+                updatePaperSize(); // This calls render()
+                updateSelectedShapeUI();
+                saveState(); // Record the import in history
+            });
+
+        } catch (err) {
+            console.error("Failed to load template:", err);
+            alert("Invalid template file format.");
+        }
+    };
+    reader.readAsText(file);
+}
